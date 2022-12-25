@@ -24,7 +24,8 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+run `ruby bin/console`
+run `Rappit.auth_example`
 
 ## Development
 
