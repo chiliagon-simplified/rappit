@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-# require 'uri'
 require 'net/http'
-require 'byebug'
 require_relative 'auth_scopes'
 require_relative '../api_endpoints'
 
@@ -19,12 +17,12 @@ module Rappit
       @response_type = config.response_type
     end
 
-    def generate_auth_scope(scope, duration = Rappit::AuthDurations::PERMANENT)
+    def generate_auth_scope(scope, duration, state)
       url = if Rappit::AuthScopes::SCOPES.include? scope
-              generate_scope(scope, duration)
+              generate_scope(scope, duration, state)
             else
               # default to identity, maybe raise error here instead
-              generate_scope(Rappit::AuthScopes::IDENTITY, duration)
+              generate_scope(Rappit::AuthScopes::IDENTITY, duration, state)
             end
 
       command_line_open_browser(url) if @open_browser_from_cmd_line
@@ -57,10 +55,10 @@ module Rappit
       system cmd, url
     end
 
-    def generate_scope(scope, duration)
+    def generate_scope(scope, duration, state)
       "#{O2AuthEndpoints::AUTHORIZE_REDDIT_URL}?client_id=#{@client_id}" \
         "&response_type=#{@response_type}" \
-        "&state=#{generate_random_string}" \
+        "&state=#{state || generate_random_string}" \
         "&redirect_uri=#{@redirect_uri}" \
         "&duration=#{duration}" \
         "&scope=#{scope}"
