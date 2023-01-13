@@ -8,12 +8,16 @@ module Rappit
   class RappitClient
     attr_reader :config
 
-    def initialize(config_arg = {})
-      @config = Rappit.config.custom_configuration(config_arg)
+    def initialize
+      @config = Rappit.config
     end
 
-    def generate_auth_scope_url
-      O2AuthApi.new(config).generate_auth_scope(AuthScopes::IDENTITY)
+    def generate_auth_scope_url(scope)
+      O2AuthApi.new(config).generate_auth_scope(scope)
+    end
+
+    def generate_access_token_for_scope(code)
+      O2AuthApi.new(config).generate_access_token(code)
     end
   end
 end

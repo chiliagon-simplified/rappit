@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'uri'
+# require 'uri'
 require 'net/http'
 require 'byebug'
 require_relative 'auth_scopes'
@@ -17,22 +17,19 @@ module Rappit
       @redirect_uri = config.redirect_uri
       @open_browser_from_cmd_line = config.open_browser_from_cmd_line
       @response_type = config.response_type
-      puts config.response_type
     end
 
-    def generate_auth_scope(scope, duration = AuthDurations::PERMANENT)
-      url = if AuthScopes::SCOPES.include? scope
+    def generate_auth_scope(scope, duration = Rappit::AuthDurations::PERMANENT)
+      url = if Rappit::AuthScopes::SCOPES.include? scope
               generate_scope(scope, duration)
             else
               # default to identity, maybe raise error here instead
-              generate_scope(AuthScopes::IDENTITY, duration)
+              generate_scope(Rappit::AuthScopes::IDENTITY, duration)
             end
 
       command_line_open_browser(url) if @open_browser_from_cmd_line
       url unless @open_browser_from_cmd_line
     end
-
-    attr_writer :code
 
     def generate_scope(scope, duration)
       "#{O2AuthEndpoints::AUTHORIZE_REDDIT_URL}?client_id=#{@client_id}" \
@@ -43,17 +40,17 @@ module Rappit
         "&scope=#{scope}"
     end
 
-    def create_token
+    def generate_access_token(code)
       uri = URI(Rappit::O2AuthEndpoints::ACCESS_TOKEN_URL)
-      http = Net::HTTP.new(uri.host, uri.port)
-
-      req = Net::HTTP::Post.new(uri.request_uri)
+      req = Net::HTTP::Post.new(uri)
       req.basic_auth @client_id, @client_secret
-      req.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      req.body = token_params
+      req['Content-Type'] = 'application/x-www-form-urlencoded'
+      req.body = generate_token_params(code)
 
-      res = http.request(req)
-      puts res.body if res.is_a?(Net::HTTPSuccess)
+      result = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+        http.request(req)
+      end
+      JSON.parse(result.body)
     end
 
     def command_line_open_browser(url)
@@ -73,9 +70,9 @@ module Rappit
       (0...8).map { rand(65..70).chr }.join
     end
 
-    def token_params
+    def generate_token_params(code)
       URI.encode_www_form({
-                            'code' => @code,
+                            'code' => code,
                             'redirect_uri' => @redirect_uri,
                             'grant_type' => 'authorization_code'
                           })
