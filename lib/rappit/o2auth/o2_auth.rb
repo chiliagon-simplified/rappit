@@ -31,15 +31,6 @@ module Rappit
       url unless @open_browser_from_cmd_line
     end
 
-    def generate_scope(scope, duration)
-      "#{O2AuthEndpoints::AUTHORIZE_REDDIT_URL}?client_id=#{@client_id}" \
-        "&response_type=#{@response_type}" \
-        "&state=#{generate_random_string}" \
-        "&redirect_uri=#{@redirect_uri}" \
-        "&duration=#{duration}" \
-        "&scope=#{scope}"
-    end
-
     def generate_access_token(code)
       uri = URI(Rappit::O2AuthEndpoints::ACCESS_TOKEN_URL)
       req = Net::HTTP::Post.new(uri)
@@ -53,6 +44,8 @@ module Rappit
       JSON.parse(result.body)
     end
 
+    private
+
     def command_line_open_browser(url)
       cmd = case RbConfig::CONFIG['host_os']
             when /mswin|mingw|cygwin/ then 'start'
@@ -64,7 +57,14 @@ module Rappit
       system cmd, url
     end
 
-    private
+    def generate_scope(scope, duration)
+      "#{O2AuthEndpoints::AUTHORIZE_REDDIT_URL}?client_id=#{@client_id}" \
+        "&response_type=#{@response_type}" \
+        "&state=#{generate_random_string}" \
+        "&redirect_uri=#{@redirect_uri}" \
+        "&duration=#{duration}" \
+        "&scope=#{scope}"
+    end
 
     def generate_random_string
       (0...8).map { rand(65..70).chr }.join
